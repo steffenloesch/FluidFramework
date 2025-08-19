@@ -429,8 +429,7 @@ export interface ContainerRuntimeOptions {
 	readonly chunkSizeInBytes: number;
 
 	/**
-	 * Enable the IdCompressor in the runtime.
-	 * @experimental Not ready for use.
+	 * Enable the IdCompressor in the runtime. Required to be enabled if the shared tree DDS is used in the runtime.
 	 */
 	readonly enableRuntimeIdCompressor: IdCompressorMode;
 
