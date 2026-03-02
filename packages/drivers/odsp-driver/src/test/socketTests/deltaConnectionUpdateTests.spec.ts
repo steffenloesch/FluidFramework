@@ -281,6 +281,48 @@ describe("DeltaConnectionMetadata update tests", () => {
 		service.off("metadataUpdate", handler);
 	});
 
+	it("Sensitivity label event should not fire on reconnect when join session is served from cache", async () => {
+		await tickClock(1);
+		socket = new ClientSocketMock();
+		const label1Object = testSensitivityLabelObjectWithId("label1");
+		const joinSessionStub = addJoinSessionStub(label1Object);
+
+		let eventCount = 0;
+		const handler = (_metadata: Record<string, string>): void => {
+			eventCount++;
+		};
+		service.on("metadataUpdate", handler);
+
+		// First connect — network fetch; executeFetch runs and emits the event.
+		await mockSocket(socket as unknown as Socket, async () =>
+			service.connectToDeltaStream(client),
+		);
+		assert.equal(eventCount, 1, "event should fire once on first connect (network fetch)");
+		assert(joinSessionStub.calledOnce, "fetchJoinSession should be called once");
+
+		// Simulate a non-auth disconnect so the join session cache entry is preserved.
+		// The disconnect flow is synchronous: currentConnection becomes undefined before this returns.
+		socket.sendServerDisconnectEvent({ message: "normal closure", code: 1000 });
+
+		// Second connect — join session served from cache; executeFetch is skipped, no event.
+		const socket2 = new ClientSocketMock();
+		await mockSocket(socket2 as unknown as Socket, async () =>
+			service.connectToDeltaStream(client),
+		);
+		assert.equal(
+			eventCount,
+			1,
+			"event should not fire again when join session is served from cache",
+		);
+		assert(
+			joinSessionStub.calledOnce,
+			"fetchJoinSession should still have been called only once (cache hit)",
+		);
+
+		service.off("metadataUpdate", handler);
+		joinSessionStub.restore();
+	});
+
 	afterEach(async () => {
 		service?.dispose();
 		clock.reset();

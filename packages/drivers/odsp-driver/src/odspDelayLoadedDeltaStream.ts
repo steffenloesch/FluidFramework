@@ -189,10 +189,6 @@ export class OdspDelayLoadedDeltaStream {
 					!requestWebsocketTokenFromJoinSession,
 				);
 			}
-			if (websocketEndpoint.sensitivityLabelsInfo !== undefined) {
-				this.emitSensitivityLabelUpdateEvent(websocketEndpoint.sensitivityLabelsInfo);
-			}
-
 			const connectionId = uuid();
 			if (this.firstConnectionAttempt) {
 				this.firstConnectionAttempt = false;
